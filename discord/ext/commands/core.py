@@ -1252,8 +1252,8 @@ def group(name=None, **attrs):
     attrs.setdefault('cls', Group)
     return command(name=name, **attrs)
 
-def check(predicate):
-    r"""A decorator that adds a check to the :class:`.Command` or its
+def check(*predicates):
+    r"""A decorator that adds a check or more to the :class:`.Command` or its
     subclasses. These checks could be accessed via :attr:`.Command.checks`.
 
     These checks should be predicates that take in a single parameter taking
@@ -1285,6 +1285,21 @@ def check(predicate):
         async def only_for_me(ctx):
             await ctx.send('I know you!')
 
+    Adding several checks to a command at once.
+
+    .. code-block:: python3
+
+        def check_if_it_is_me(ctx):
+            return ctx.message.author.id == 85309593344815104
+
+        def check_if_in_discord_py(ctx):
+            return ctx.message.guild.id == 336642139381301249
+
+        @bot.command()
+        @commands.check(check_if_it_is_me, check_if_in_discord_py)
+        async def only_for_me(ctx):
+            await ctx.send('I know you are in the discord.py guild!')
+
     Transforming common checks into its own decorator:
 
     .. code-block:: python3
@@ -1306,13 +1321,14 @@ def check(predicate):
     """
 
     def decorator(func):
-        if isinstance(func, Command):
-            func.checks.append(predicate)
-        else:
-            if not hasattr(func, '__commands_checks__'):
-                func.__commands_checks__ = []
+        for predicate in predicates:
+            if isinstance(func, Command):
+                func.checks.append(predicate)
+            else:
+                if not hasattr(func, '__commands_checks__'):
+                    func.__commands_checks__ = []
 
-            func.__commands_checks__.append(predicate)
+                func.__commands_checks__.append(predicate)
 
         return func
     return decorator

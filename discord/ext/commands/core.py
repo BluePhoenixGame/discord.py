@@ -1270,6 +1270,10 @@ def check(*predicates):
 
         These functions can either be regular functions or coroutines.
 
+    .. versionchanged:: 1.2.0
+
+        Allow several checks to be added at once.
+
     Examples
     ---------
 
@@ -1316,8 +1320,8 @@ def check(*predicates):
 
     Parameters
     -----------
-    predicate: Callable[:class:`Context`, :class:`bool`]
-        The predicate to check if the command should be invoked.
+    *predicates: Callable[:class:`Context`, :class:`bool`]
+        An argument list of predicates to check if the command should be invoked.
     """
 
     def decorator(func):

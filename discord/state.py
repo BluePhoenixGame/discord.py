@@ -28,7 +28,6 @@ import asyncio
 from collections import deque, namedtuple, OrderedDict
 import copy
 import datetime
-import enum
 import itertools
 import logging
 import math
@@ -45,11 +44,12 @@ from .channel import *
 from .raw_models import *
 from .member import Member
 from .role import Role
-from .enums import ChannelType, try_enum, Status
+from .enums import ChannelType, try_enum, Status, Enum
 from . import utils
 from .embeds import Embed
+from .object import Object
 
-class ListenerType(enum.Enum):
+class ListenerType(Enum):
     chunk = 0
 
 Listener = namedtuple('Listener', ('type', 'future', 'predicate'))
@@ -261,15 +261,16 @@ class ConnectionState:
             yield self.receive_chunk(guild.id)
 
     def _get_guild_channel(self, data):
+        channel_id = int(data['channel_id'])
         try:
             guild = self._get_guild(int(data['guild_id']))
         except KeyError:
-            channel = self.get_channel(int(data['channel_id']))
+            channel = self.get_channel(channel_id)
             guild = None
         else:
-            channel = guild and guild.get_channel(int(data['channel_id']))
+            channel = guild and guild.get_channel(channel_id)
 
-        return channel, guild
+        return channel or Object(id=channel_id), guild
 
     async def request_offline_members(self, guilds):
         # get all the chunks
@@ -368,7 +369,7 @@ class ConnectionState:
         message = Message(channel=channel, data=data, state=self)
         self.dispatch('message', message)
         self._messages.append(message)
-        if channel and channel._type in (0, 5):
+        if channel and channel.__class__ is TextChannel:
             channel.last_message_id = message.id
 
     def parse_message_delete(self, data):
@@ -397,15 +398,7 @@ class ConnectionState:
             older_message = copy.copy(message)
             raw.cached_message = older_message
             self.dispatch('raw_message_edit', raw)
-            if 'call' in data:
-                # call state message edit
-                message._handle_call(data['call'])
-            elif 'content' not in data:
-                # embed only edit
-                message.embeds = [Embed.from_dict(d) for d in data['embeds']]
-            else:
-                message._update(channel=message.channel, data=data)
-
+            message._update(data)
             self.dispatch('message_edit', older_message, message)
         else:
             self.dispatch('raw_message_edit', raw)

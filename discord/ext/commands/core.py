@@ -1328,14 +1328,13 @@ def check(*predicates):
     """
 
     def decorator(func):
-        for predicate in predicates:
-            if isinstance(func, Command):
-                func.checks.append(predicate)
-            else:
-                if not hasattr(func, '__commands_checks__'):
-                    func.__commands_checks__ = []
+        if isinstance(func, Command):
+            func.checks.extend(predicates)
+        else:
+            if not hasattr(func, '__commands_checks__'):
+                func.__commands_checks__ = []
 
-                func.__commands_checks__.append(predicate)
+            func.__commands_checks__.extend(predicates)
 
         return func
     return decorator

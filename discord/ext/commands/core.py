@@ -1273,7 +1273,7 @@ def check(*predicates):
 
         These functions can either be regular functions or coroutines.
 
-    .. versionchanged:: 1.3.5
+    .. versionchanged:: 1.4
 
         Allow several checks to be added at once.
 
